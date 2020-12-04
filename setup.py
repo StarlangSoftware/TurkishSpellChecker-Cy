@@ -5,7 +5,7 @@ setup(
     ext_modules=cythonize(["SpellChecker/*.pyx"],
                           compiler_directives={'language_level': "3"}),
     name='NlpToolkit-SpellChecker-Cy',
-    version='1.0.2',
+    version='1.0.3',
     packages=['SpellChecker'],
     package_data={'SpellChecker': ['*.pxd', '*.pyx', '*.c']},
     url='https://github.com/olcaytaner/TurkishSpellChecker-Cy',

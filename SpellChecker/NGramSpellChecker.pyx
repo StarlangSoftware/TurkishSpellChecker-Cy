@@ -10,8 +10,9 @@ from SpellChecker.SimpleSpellChecker cimport SimpleSpellChecker
 cdef class NGramSpellChecker(SimpleSpellChecker):
 
     cdef NGram __nGram
+    cdef bint __rootNgram
 
-    def __init__(self, fsm: FsmMorphologicalAnalyzer, nGram: NGram):
+    def __init__(self, fsm: FsmMorphologicalAnalyzer, nGram: NGram, rootNGram: bool):
         """
         A constructor of NGramSpellChecker class which takes a FsmMorphologicalAnalyzer and an NGram as inputs. Then,
         calls its super class SimpleSpellChecker with given FsmMorphologicalAnalyzer and assigns given NGram to the
@@ -26,6 +27,7 @@ cdef class NGramSpellChecker(SimpleSpellChecker):
         """
         super().__init__(fsm)
         self.__nGram = nGram
+        self.__rootNgram = rootNGram
 
     cpdef Word checkAnalysisAndSetRoot(self, Sentence sentence, int index):
         """
@@ -39,7 +41,10 @@ cdef class NGramSpellChecker(SimpleSpellChecker):
         if index < sentence.wordCount():
             fsmParses = self.fsm.morphologicalAnalysis(sentence.getWord(index).getName())
             if fsmParses.size() != 0:
-                return fsmParses.getParseWithLongestRootWord().getWord()
+                if self.__rootNgram:
+                    return fsmParses.getParseWithLongestRootWord().getWord()
+                else:
+                    return sentence.getWord(index)
         return None
 
     cpdef Sentence spellCheck(self, Sentence sentence):
@@ -88,7 +93,10 @@ cdef class NGramSpellChecker(SimpleSpellChecker):
                 bestProbability = 0.0
                 for candidate in candidates:
                     fsmParses = self.fsm.morphologicalAnalysis(candidate)
-                    root = fsmParses.getParseWithLongestRootWord().getWord()
+                    if self.__rootNgram:
+                        root = fsmParses.getParseWithLongestRootWord().getWord()
+                    else:
+                        root = Word(candidate)
                     if previousRoot is not None:
                         previousProbability = self.__nGram.getProbability(previousRoot.getName(), root.getName())
                     else:
