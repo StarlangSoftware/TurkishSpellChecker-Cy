@@ -11,6 +11,7 @@ cdef class NGramSpellChecker(SimpleSpellChecker):
 
     cdef NGram __nGram
     cdef bint __rootNgram
+    cdef float __threshold
 
     def __init__(self, fsm: FsmMorphologicalAnalyzer, nGram: NGram, rootNGram: bool):
         """
@@ -28,6 +29,7 @@ cdef class NGramSpellChecker(SimpleSpellChecker):
         super().__init__(fsm)
         self.__nGram = nGram
         self.__rootNgram = rootNGram
+        self.__threshold = 0.0
 
     cpdef Word checkAnalysisAndSetRoot(self, Sentence sentence, int index):
         """
@@ -46,6 +48,9 @@ cdef class NGramSpellChecker(SimpleSpellChecker):
                 else:
                     return sentence.getWord(index)
         return None
+
+    cpdef setThreshold(self, float threshold):
+        self.__threshold = threshold
 
     cpdef Sentence spellCheck(self, Sentence sentence):
         """
