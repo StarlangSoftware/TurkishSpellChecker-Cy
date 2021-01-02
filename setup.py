@@ -8,7 +8,7 @@ setup(
     version='1.0.4',
     packages=['SpellChecker'],
     package_data={'SpellChecker': ['*.pxd', '*.pyx', '*.c']},
-    url='https://github.com/olcaytaner/TurkishSpellChecker-Cy',
+    url='https://github.com/StarlangSoftware/TurkishSpellChecker-Cy',
     license='',
     author='olcaytaner',
     author_email='olcay.yildiz@ozyegin.edu.tr',
