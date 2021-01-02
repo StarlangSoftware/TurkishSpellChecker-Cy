@@ -11,7 +11,7 @@ setup(
     url='https://github.com/olcaytaner/TurkishSpellChecker-Cy',
     license='',
     author='olcaytaner',
-    author_email='olcaytaner@isikun.edu.tr',
+    author_email='olcay.yildiz@ozyegin.edu.tr',
     description='Turkish Spell Checker Library',
     install_requires=['NlpToolkit-MorphologicalAnalysis-Cy', 'NlpToolkit-NGram-Cy']
 )
