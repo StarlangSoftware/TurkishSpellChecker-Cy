@@ -7,7 +7,19 @@ from Corpus.Sentence cimport Sentence
 cdef class SimpleSpellChecker(SpellChecker):
 
     cdef FsmMorphologicalAnalyzer fsm
+    cdef dict __merged_words
+    cdef dict __split_words
 
     cpdef list __generateCandidateList(self, str word)
     cpdef list candidateList(self, Word word)
     cpdef Sentence spellCheck(self, Sentence sentence)
+    cpdef bint forcedMisspellCheck(self, Word word, Sentence result)
+    cpdef bint forcedBackwardMergeCheck(self, Word word, Sentence result, Word previousWord)
+    cpdef bint forcedForwardMergeCheck(self, Word word, Sentence result, Word nextWord)
+    cpdef bint forcedSplitCheck(self, Word word, Sentence result)
+    cpdef bint forcedShortcutCheck(self, Word word, Sentence result, Word previousWord)
+    cpdef loadDictionaries(self)
+    cpdef str getCorrectForm(self, str wordName, dict dictionary)
+    cpdef list mergedCandidatesList(self, Word previousWord, Word word, Word nextWord)
+    cpdef list splitCandidatesList(self, Word word)
+    cpdef tuple getSplitPair(self, Word word)

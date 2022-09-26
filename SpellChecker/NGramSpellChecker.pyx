@@ -4,16 +4,17 @@ from MorphologicalAnalysis.FsmMorphologicalAnalyzer cimport FsmMorphologicalAnal
 from MorphologicalAnalysis.FsmParseList cimport FsmParseList
 from NGram.NGram cimport NGram
 
+from SpellChecker.Candidate cimport Candidate
+from SpellChecker.Operator import Operator
 from SpellChecker.SimpleSpellChecker cimport SimpleSpellChecker
 
 
 cdef class NGramSpellChecker(SimpleSpellChecker):
 
-    cdef NGram __nGram
-    cdef bint __rootNgram
-    cdef float __threshold
-
-    def __init__(self, fsm: FsmMorphologicalAnalyzer, nGram: NGram, rootNGram: bool):
+    def __init__(self,
+                 fsm: FsmMorphologicalAnalyzer,
+                 nGram: NGram,
+                 rootNGram: bool):
         """
         A constructor of NGramSpellChecker class which takes a FsmMorphologicalAnalyzer and an NGram as inputs. Then,
         calls its super class SimpleSpellChecker with given FsmMorphologicalAnalyzer and assigns given NGram to the
@@ -28,10 +29,12 @@ cdef class NGramSpellChecker(SimpleSpellChecker):
         """
         super().__init__(fsm)
         self.__nGram = nGram
-        self.__rootNgram = rootNGram
+        self.__root_n_gram = rootNGram
         self.__threshold = 0.0
 
-    cpdef Word checkAnalysisAndSetRoot(self, Sentence sentence, int index):
+    cpdef Word checkAnalysisAndSetRootForWordAtIndex(self,
+                                                     Sentence sentence,
+                                                     int index):
         """
         Checks the morphological analysis of the given word in the given index. If there is no misspelling, it returns
         the longest root word of the possible analyses.
@@ -39,18 +42,33 @@ cdef class NGramSpellChecker(SimpleSpellChecker):
         @param index Index of the word
         @return If the word is misspelled, null; otherwise the longest root word of the possible analyses.
         """
-        cdef FsmParseList fsmParses
+        cdef FsmParseList fsm_parses
         if index < sentence.wordCount():
-            fsmParses = self.fsm.morphologicalAnalysis(sentence.getWord(index).getName())
-            if fsmParses.size() != 0:
-                if self.__rootNgram:
-                    return fsmParses.getParseWithLongestRootWord().getWord()
+            fsm_parses = self.fsm.morphologicalAnalysis(sentence.getWord(index).getName())
+            if fsm_parses.size() != 0:
+                if self.__root_n_gram:
+                    return fsm_parses.getParseWithLongestRootWord().getWord()
                 else:
                     return sentence.getWord(index)
         return None
 
+    cpdef Word checkAnalysisAndSetRoot(self, str word):
+        cdef FsmParseList fsm_parses
+        fsm_parses = self.fsm.morphologicalAnalysis(word)
+        if fsm_parses.size() != 0:
+            if self.__root_n_gram:
+                return fsm_parses.getParseWithLongestRootWord().getWord()
+            else:
+                return Word(word)
+        return None
+
     cpdef setThreshold(self, float threshold):
         self.__threshold = threshold
+
+    cpdef float getProbability(self,
+                               str word1,
+                               str word2):
+        return self.__nGram.getProbability(word1, word2)
 
     cpdef Sentence spellCheck(self, Sentence sentence):
         """
@@ -78,47 +96,96 @@ cdef class NGramSpellChecker(SimpleSpellChecker):
         Sentence
             Sentence result.
         """
-        cdef str bestCandidate, candidate
+        cdef Candidate best_candidate, candidate
         cdef Sentence result
-        cdef int i
-        cdef Word previousRoot, word, bestRoot, root, nextRoot
-        cdef FsmParseList fsmParses
+        cdef int i, repeat
+        cdef Word previous_root, word, next_word, previous_word, next_next_word
+        cdef Word previous_previous_word, best_root, root, next_root
+        cdef FsmParseList fsm_parses
         cdef list candidates
-        cdef double bestProbability, previousProbability, nextProbability
-        previousRoot = None
+        cdef double best_probability, previous_probability, next_probability
+        previous_root = None
         result = Sentence()
-        root = self.checkAnalysisAndSetRoot(sentence, 0)
-        nextRoot = self.checkAnalysisAndSetRoot(sentence, 1)
-        for i in range(sentence.wordCount()):
-            word = sentence.getWord(i)
-            if root is None:
-                candidates = self.candidateList(word)
-                bestCandidate = word.getName()
-                bestRoot = word
-                bestProbability = 0.0
-                for candidate in candidates:
-                    fsmParses = self.fsm.morphologicalAnalysis(candidate)
-                    if self.__rootNgram:
-                        root = fsmParses.getParseWithLongestRootWord().getWord()
+        root = self.checkAnalysisAndSetRootForWordAtIndex(sentence, 0)
+        next_root = self.checkAnalysisAndSetRootForWordAtIndex(sentence, 1)
+        for repeat in range(2):
+            i = 0
+            while i < sentence.wordCount():
+                next_word = None
+                previous_word = None
+                next_next_word = None
+                previous_previous_word = None
+                word = sentence.getWord(i)
+                if i > 0:
+                    previous_word = sentence.getWord(i - 1)
+                if i > 1:
+                    previous_previous_word = sentence.getWord(i - 2)
+                if i < sentence.wordCount() - 1:
+                    next_word = sentence.getWord(i + 1)
+                if i < sentence.wordCount() - 2:
+                    next_next_word = sentence.getWord(i + 2)
+                if self.forcedMisspellCheck(word, result) or \
+                        self.forcedBackwardMergeCheck(word, result, previous_word):
+                    i = i + 1
+                    continue
+                if self.forcedForwardMergeCheck(word, result, next_word):
+                    i = i + 2
+                    continue
+                if self.forcedSplitCheck(word, result) or self.forcedShortcutCheck(word, result, previous_word):
+                    i = i + 1
+                    continue
+                if root is None:
+                    candidates = self.candidateList(word)
+                    candidates.extend(self.mergedCandidatesList(previous_word, word, next_word))
+                    candidates.extend(self.splitCandidatesList(word))
+                    best_candidate = Candidate(word.getName(), Operator.NO_CHANGE)
+                    best_root = word
+                    best_probability = self.__threshold
+                    for candidate in candidates:
+                        if candidate.getOperator() == Operator.SPELL_CHECK or \
+                                candidate.getOperator() == Operator.MISSPELLED_REPLACE:
+                            root = self.checkAnalysisAndSetRoot(candidate.getName())
+                        if candidate.getOperator() == Operator.BACKWARD_MERGE and previous_word is not None \
+                                and previous_previous_word is not None:
+                            root = self.checkAnalysisAndSetRoot(previous_word.getName() + word.getName())
+                            previous_root = self.checkAnalysisAndSetRoot(previous_previous_word.getName())
+                        if candidate.getOperator() == Operator.FORWARD_MERGE and next_word is not None \
+                                and next_next_word is not None:
+                            root = self.checkAnalysisAndSetRoot(word.getName() + next_word.getName())
+                            next_root = self.checkAnalysisAndSetRoot(next_next_word.getName())
+                        if previous_root is not None:
+                            if candidate.getOperator() == Operator.SPLIT:
+                                root = self.checkAnalysisAndSetRoot(candidate.getName().split(" ")[0])
+                            previous_probability = self.__nGram.getProbability(previous_root.getName(), root.getName())
+                        else:
+                            previous_probability = 0.0
+                        if next_root is not None:
+                            if candidate.getOperator() == Operator.SPLIT:
+                                root = self.checkAnalysisAndSetRoot(candidate.getName().split(" ")[1])
+                            next_probability = self.__nGram.getProbability(root.getName(), next_root.getName())
+                        else:
+                            next_probability = 0.0
+                        if max(previous_probability, next_probability) > best_probability:
+                            best_candidate = candidate
+                            best_root = root
+                            best_probability = max(previous_probability, next_probability)
+                    if best_candidate.getOperator() == Operator.FORWARD_MERGE:
+                        i = i + 1
+                    if best_candidate.getName() == Operator.BACKWARD_MERGE:
+                        result.replaceWord(i - 1, Word(best_candidate.getName()))
                     else:
-                        root = Word(candidate)
-                    if previousRoot is not None:
-                        previousProbability = self.__nGram.getProbability(previousRoot.getName(), root.getName())
-                    else:
-                        previousProbability = 0.0
-                    if nextRoot is not None:
-                        nextProbability = self.__nGram.getProbability(root.getName(), nextRoot.getName())
-                    else:
-                        nextProbability = 0.0
-                    if max(previousProbability, nextProbability) > bestProbability:
-                        bestCandidate = candidate
-                        bestRoot = root
-                        bestProbability = max(previousProbability, nextProbability)
-                root = bestRoot
-                result.addWord(Word(bestCandidate))
-            else:
-                result.addWord(word)
-            previousRoot = root
-            root = nextRoot
-            nextRoot = self.checkAnalysisAndSetRoot(sentence, i + 2)
+                        result.addWord(Word(best_candidate.getName()))
+                    root = best_root
+                else:
+                    result.addWord(word)
+                previous_root = root
+                root = next_root
+                next_root = self.checkAnalysisAndSetRootForWordAtIndex(sentence, i + 2)
+                i = i + 1
+            sentence = result
+            if repeat < 1:
+                result = Sentence()
+                previous_root = None
+                root = self.checkAnalysisAndSetRootForWordAtIndex(sentence, 0)
+                next_root = self.checkAnalysisAndSetRootForWordAtIndex(sentence, 1)
         return result
