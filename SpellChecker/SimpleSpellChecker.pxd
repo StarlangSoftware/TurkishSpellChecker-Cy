@@ -17,7 +17,7 @@ cdef class SimpleSpellChecker(SpellChecker):
     cpdef bint forcedBackwardMergeCheck(self, Word word, Sentence result, Word previousWord)
     cpdef bint forcedForwardMergeCheck(self, Word word, Sentence result, Word nextWord)
     cpdef bint forcedSplitCheck(self, Word word, Sentence result)
-    cpdef bint forcedShortcutCheck(self, Word word, Sentence result, Word previousWord)
+    cpdef bint forcedShortcutCheck(self, Word word, Sentence result)
     cpdef loadDictionaries(self)
     cpdef str getCorrectForm(self, str wordName, dict dictionary)
     cpdef list mergedCandidatesList(self, Word previousWord, Word word, Word nextWord)
