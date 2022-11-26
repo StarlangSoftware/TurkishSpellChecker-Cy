@@ -2,12 +2,12 @@ from Corpus.Sentence cimport Sentence
 from Dictionary.Word cimport Word
 from NGram.NGram cimport NGram
 from SpellChecker.SimpleSpellChecker cimport SimpleSpellChecker
+from SpellChecker.SpellCheckerParameter cimport SpellCheckerParameter
 
 cdef class NGramSpellChecker(SimpleSpellChecker):
 
     cdef NGram __nGram
-    cdef bint __root_n_gram
-    cdef float __threshold
+    cdef SpellCheckerParameter __parameter
 
     cpdef Word checkAnalysisAndSetRootForWordAtIndex(self, Sentence sentence, int index)
     cpdef Word checkAnalysisAndSetRoot(self, str word)
