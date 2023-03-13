@@ -11,7 +11,7 @@ cdef class SimpleSpellChecker(SpellChecker):
     cdef dict __split_words
 
     cpdef list __generateCandidateList(self, str word)
-    cpdef list candidateList(self, Word word)
+    cpdef list candidateList(self, Word word, Sentence sentence)
     cpdef Sentence spellCheck(self, Sentence sentence)
     cpdef bint forcedMisspellCheck(self, Word word, Sentence result)
     cpdef bint forcedBackwardMergeCheck(self, Word word, Sentence result, Word previousWord)
