@@ -239,9 +239,11 @@ cdef class SimpleSpellChecker(SpellChecker):
     def addSplitWords(self,
                       multiWord: str,
                       result: Sentence):
+        cdef str word
+        cdef list words
         words = multiWord.split(" ")
-        result.addWord(Word(words[0]))
-        result.addWord(Word(words[1]))
+        for word in words:
+            result.addWord(Word(word))
 
     cpdef bint forcedSplitCheck(self,
                                 Word word,
@@ -375,8 +377,9 @@ cdef class SimpleSpellChecker(SpellChecker):
         return False
 
     cpdef loadDictionaries(self):
-        cdef str line
+        cdef str line, word, split_word
         cdef list items, lines
+        cdef int index
         input_file = open(pkg_resources.resource_filename(__name__, 'data/merged.txt'), "r", encoding="utf8")
         lines = input_file.readlines()
         for line in lines:
@@ -386,8 +389,10 @@ cdef class SimpleSpellChecker(SpellChecker):
         input_file = open(pkg_resources.resource_filename(__name__, 'data/split.txt'), "r", encoding="utf8")
         lines = input_file.readlines()
         for line in lines:
-            items = line.strip().split(" ")
-            self.__split_words[items[0]] = items[1] + " " + items[2]
+            index = line.strip().index(' ')
+            word = line.strip()[:index]
+            split_word = line.strip()[index + 1:]
+            self.__split_words[word] = split_word
         input_file.close()
 
     cpdef str getCorrectForm(self, str wordName, dict dictionary):
