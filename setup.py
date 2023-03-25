@@ -9,7 +9,7 @@ setup(
     ext_modules=cythonize(["SpellChecker/*.pyx"],
                           compiler_directives={'language_level': "3"}),
     name='NlpToolkit-SpellChecker-Cy',
-    version='1.0.11',
+    version='1.0.12',
     packages=['SpellChecker'],
     package_data={'SpellChecker': ['*.pxd', '*.pyx', '*.c'],
                   'SpellChecker.data': ['*.txt']},

@@ -1,6 +1,5 @@
 from collections import deque
 
-import pkg_resources
 from Corpus.Sentence cimport Sentence
 from Dictionary.Word cimport Word
 from MorphologicalAnalysis.FsmMorphologicalAnalyzer cimport FsmMorphologicalAnalyzer
@@ -39,7 +38,7 @@ cdef class TrieBasedSpellChecker(NGramSpellChecker):
         cdef list lines
         cdef str line
         self.__generated_words = []
-        input_file = open(pkg_resources.resource_filename(__name__, 'data/generated_words.txt'), "r", encoding="utf8")
+        input_file = self.getFile('generated_words.txt')
         lines = input_file.readlines()
         for line in lines:
             self.__generated_words.append(line.strip())

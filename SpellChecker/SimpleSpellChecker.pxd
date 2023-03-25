@@ -2,15 +2,17 @@ from MorphologicalAnalysis.FsmMorphologicalAnalyzer cimport FsmMorphologicalAnal
 from SpellChecker.SpellChecker cimport SpellChecker
 from Dictionary.Word cimport Word
 from Corpus.Sentence cimport Sentence
-
+from SpellChecker.SpellCheckerParameter cimport SpellCheckerParameter
 
 cdef class SimpleSpellChecker(SpellChecker):
 
     cdef FsmMorphologicalAnalyzer fsm
     cdef dict __merged_words
     cdef dict __split_words
+    cdef SpellCheckerParameter parameter
 
     cpdef list __generateCandidateList(self, str word)
+    cpdef object getFile(self, str file_name)
     cpdef list candidateList(self, Word word, Sentence sentence)
     cpdef Sentence spellCheck(self, Sentence sentence)
     cpdef bint forcedMisspellCheck(self, Word word, Sentence result)

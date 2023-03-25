@@ -29,7 +29,7 @@ cdef class SimpleSpellChecker(SpellChecker):
                                   "miymişler", "mıymışsın", "mıymışlar", "muymuşsun", "muymuşlar", "müymüşsün",
                                   "müymüşler", "misinizdir", "mısınızdır", "musunuzdur", "müsünüzdür"]
 
-    def __init__(self, fsm: FsmMorphologicalAnalyzer):
+    def __init__(self, fsm: FsmMorphologicalAnalyzer, parameter: SpellCheckerParameter = None):
         """
         A constructor of SimpleSpellChecker class which takes a FsmMorphologicalAnalyzer as an input and
         assigns it to the fsm variable.
@@ -42,7 +42,17 @@ cdef class SimpleSpellChecker(SpellChecker):
         self.fsm = fsm
         self.__merged_words = {}
         self.__split_words = {}
+        if parameter is None:
+            self.parameter = SpellCheckerParameter()
+        else:
+            self.parameter = parameter
         self.loadDictionaries()
+
+    cpdef object getFile(self, str file_name):
+        if len(self.parameter.getDomain()) == 0:
+            return open(pkg_resources.resource_filename(__name__, 'data/' + file_name), "r", encoding="utf8")
+        else:
+            return open(pkg_resources.resource_filename(__name__, 'data/' + self.parameter.getDomain() + "_" + file_name), "r", encoding="utf8")
 
     cpdef list __generateCandidateList(self, str word):
         """
@@ -380,13 +390,13 @@ cdef class SimpleSpellChecker(SpellChecker):
         cdef str line, word, split_word
         cdef list items, lines
         cdef int index
-        input_file = open(pkg_resources.resource_filename(__name__, 'data/merged.txt'), "r", encoding="utf8")
+        input_file = self.getFile('merged.txt')
         lines = input_file.readlines()
         for line in lines:
             items = line.strip().split(" ")
             self.__merged_words[items[0] + " " + items[1]] = items[2]
         input_file.close()
-        input_file = open(pkg_resources.resource_filename(__name__, 'data/split.txt'), "r", encoding="utf8")
+        input_file = self.getFile('split.txt')
         lines = input_file.readlines()
         for line in lines:
             index = line.strip().index(' ')

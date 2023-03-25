@@ -10,6 +10,7 @@ cdef class SpellCheckerParameter:
         self.__deMiCheck = True
         self.__rootNGram = True
         self.__minWordLength = 4
+        self.__domain = ""
 
     cpdef setThreshold(self, float threshold):
         """
@@ -39,6 +40,13 @@ cdef class SpellCheckerParameter:
         """
         self.__minWordLength = minWordLength
 
+    cpdef setDomain(self, str domain):
+        """
+        Sets the _domain name to the specified value.
+        :param domain: the new domain name to set for this object
+        """
+        self.__domain = domain
+
     cpdef float getThreshold(self):
         """
         Returns the threshold value used in calculating the n-gram probabilities.
@@ -66,3 +74,10 @@ cdef class SpellCheckerParameter:
         :return: the minimum word length for the spell checker
         """
         return self.__minWordLength
+
+    cpdef str getDomain(self):
+        """
+        Returns the domain name
+        :return: the domain name
+        """
+        return self.__domain

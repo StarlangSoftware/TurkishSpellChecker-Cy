@@ -1,4 +1,3 @@
-import pkg_resources
 from Corpus.Sentence cimport Sentence
 from Dictionary.Word cimport Word
 from MorphologicalAnalysis.FsmMorphologicalAnalyzer cimport FsmMorphologicalAnalyzer
@@ -38,7 +37,7 @@ cdef class ContextBasedSpellChecker(NGramSpellChecker):
         cdef list lines, items, otherWords
         cdef str line, word
         self.__context_list = {}
-        input_file = open(pkg_resources.resource_filename(__name__, 'data/context_list.txt'), "r", encoding="utf8")
+        input_file = self.getFile('context_list.txt')
         lines = input_file.readlines()
         for line in lines:
             items = line.strip().split("\t")

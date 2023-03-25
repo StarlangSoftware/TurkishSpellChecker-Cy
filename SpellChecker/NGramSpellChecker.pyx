@@ -29,9 +29,8 @@ cdef class NGramSpellChecker(SimpleSpellChecker):
         nGram : NGram
             NGram type input.
         """
-        super().__init__(fsm)
+        super().__init__(fsm, parameter)
         self.__nGram = nGram
-        self.__parameter = parameter
 
     cpdef Word checkAnalysisAndSetRootForWordAtIndex(self,
                                                      Sentence sentence,
@@ -50,11 +49,11 @@ cdef class NGramSpellChecker(SimpleSpellChecker):
             compiled_expression1 = re.compile(".*\d+.*")
             compiled_expression2 = re.compile(".*[a-zA-ZçöğüşıÇÖĞÜŞİ]+.*")
             if (compiled_expression1.fullmatch(word_name) and compiled_expression2.fullmatch(word_name) \
-                and "'" not in word_name) or len(word_name) < self.__parameter.getMinWordLength():
+                and "'" not in word_name) or len(word_name) < self.parameter.getMinWordLength():
                 return sentence.getWord(index)
             fsm_parses = self.fsm.morphologicalAnalysis(sentence.getWord(index).getName())
             if fsm_parses.size() != 0:
-                if self.__parameter.isRootNGram():
+                if self.parameter.isRootNGram():
                     return fsm_parses.getParseWithLongestRootWord().getWord()
                 else:
                     return sentence.getWord(index)
@@ -62,7 +61,7 @@ cdef class NGramSpellChecker(SimpleSpellChecker):
                 upper_case_word_name = Word.toCapital(word_name)
                 upper_case_fsm_parses = self.fsm.morphologicalAnalysis(upper_case_word_name)
                 if upper_case_fsm_parses.size() != 0:
-                    if self.__parameter.isRootNGram():
+                    if self.parameter.isRootNGram():
                         return upper_case_fsm_parses.getParseWithLongestRootWord().getWord()
                     else:
                         return sentence.getWord(index)
@@ -78,13 +77,13 @@ cdef class NGramSpellChecker(SimpleSpellChecker):
         cdef FsmParseList fsm_parses_of_word, fsm_parses_of_capitalized_word
         fsm_parses_of_word = self.fsm.morphologicalAnalysis(word)
         if fsm_parses_of_word.size() != 0:
-            if self.__parameter.isRootNGram():
+            if self.parameter.isRootNGram():
                 return fsm_parses_of_word.getParseWithLongestRootWord().getWord()
             else:
                 return Word(word)
         fsm_parses_of_capitalized_word = self.fsm.morphologicalAnalysis(word)
         if fsm_parses_of_capitalized_word.size() != 0:
-            if self.__parameter.isRootNGram():
+            if self.parameter.isRootNGram():
                 return fsm_parses_of_capitalized_word.getParseWithLongestRootWord().getWord()
             else:
                 return Word(word)
@@ -178,7 +177,7 @@ cdef class NGramSpellChecker(SimpleSpellChecker):
                 next_root = self.checkAnalysisAndSetRootForWordAtIndex(sentence, i + 2)
                 i = i + 1
                 continue
-            if self.__parameter.isDeMiCheck():
+            if self.parameter.isDeMiCheck():
                 if self.forcedDeDaSplitCheck(word, result) or self.forcedQuestionSuffixSplitCheck(word, result):
                     previous_root = self.checkAnalysisAndSetRootForWordAtIndex(result, result.wordCount() - 1)
                     root = next_root
@@ -186,7 +185,7 @@ cdef class NGramSpellChecker(SimpleSpellChecker):
                     i = i + 1
                     continue
             if root is None or \
-                    (len(word.getName()) <= self.__parameter.getMinWordLength() and self.fsm.morphologicalAnalysis(word.getName()).size() == 0):
+                    (len(word.getName()) <= self.parameter.getMinWordLength() and self.fsm.morphologicalAnalysis(word.getName()).size() == 0):
                 candidates = []
                 if root is None:
                     candidates.extend(self.candidateList(word, sentence))
@@ -194,7 +193,7 @@ cdef class NGramSpellChecker(SimpleSpellChecker):
                 candidates.extend(self.mergedCandidatesList(previous_word, word, next_word))
                 best_candidate = Candidate(word.getName(), Operator.NO_CHANGE)
                 best_root = word
-                best_probability = self.__parameter.getThreshold()
+                best_probability = self.parameter.getThreshold()
                 for candidate in candidates:
                     if candidate.getOperator() == Operator.SPELL_CHECK or \
                             candidate.getOperator() == Operator.MISSPELLED_REPLACE or \
