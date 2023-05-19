@@ -177,7 +177,8 @@ cdef class SimpleSpellChecker(SpellChecker):
                 i = i + 2
                 continue
             if self.forcedSplitCheck(word, result) or self.forcedShortcutCheck(word, result) or \
-                    self.forcedDeDaSplitCheck(word, result) or self.forcedQuestionSuffixSplitCheck(word, result):
+                    self.forcedDeDaSplitCheck(word, result) or self.forcedQuestionSuffixSplitCheck(word, result)or \
+                    self.forcedSuffixSplitCheck(word, result):
                 i = i + 1
                 continue
             fsm_parse_list = self.fsm.morphologicalAnalysis(word.getName())
@@ -212,6 +213,13 @@ cdef class SimpleSpellChecker(SpellChecker):
     cpdef bint forcedMisspellCheck(self,
                                    Word word,
                                    Sentence result):
+        """
+        Checks if the given word is a misspelled word according to the misspellings list, and if it is, then replaces
+        it with its correct form in the given sentence.
+        :param word: the {@link Word} to check for misspelling
+        :param result: the {@link Sentence} that the word belongs to
+        :return: true if the word was corrected, false otherwise
+        """
         cdef str forced_replacement
         forced_replacement = self.fsm.getDictionary().getCorrectForm(word.getName())
         if forced_replacement != "":
@@ -223,6 +231,14 @@ cdef class SimpleSpellChecker(SpellChecker):
                                  Word word,
                                  Sentence result,
                                  Word previousWord):
+        """
+        Checks if the given word and its preceding word need to be merged according to the merged list. If the merge
+        is needed, the word and its preceding word are replaced with their merged form in the given sentence.
+        :param word: the {@link Word} to check for merge
+        :param result: the {@link Sentence} that the word belongs to
+        :param previousWord: the preceding {@link Word} of the given {@link Word}
+        :return: true if the word was merged, false otherwise
+        """
         cdef str forced_replacement
         if previousWord is not None:
             forced_replacement = self.getCorrectForm(
@@ -237,6 +253,14 @@ cdef class SimpleSpellChecker(SpellChecker):
                                 Word word,
                                 Sentence result,
                                 Word nextWord):
+        """
+        Checks if the given word and its next word need to be merged according to the merged list. If the merge is
+        needed, the word and its next word are replaced with their merged form in the given sentence.
+        :param word: the {@link Word} to check for merge
+        :param result: the {@link Sentence} that the word belongs to
+        :param nextWord: the next {@link Word} of the given {@link Word}
+        :return: true if the word was merged, false otherwise
+        """
         cdef str forced_replacement
         if nextWord is not None:
             forced_replacement = self.getCorrectForm(word.getName() + " " + nextWord.getName(),
@@ -249,6 +273,11 @@ cdef class SimpleSpellChecker(SpellChecker):
     def addSplitWords(self,
                       multiWord: str,
                       result: Sentence):
+        """
+        Given a multiword form, splits it and adds it to the given sentence.
+        :param multiWord: multiword form to split
+        :param result: the {@link Sentence} to add the split words to
+        """
         cdef str word
         cdef list words
         words = multiWord.split(" ")
@@ -258,6 +287,13 @@ cdef class SimpleSpellChecker(SpellChecker):
     cpdef bint forcedSplitCheck(self,
                                 Word word,
                                 Sentence result):
+        """
+        Checks if the given word needs to be split according to the split list. If the split is needed, the word is
+        replaced with its split form in the given sentence.
+        :param word: the {@link Word} to check for split
+        :param result: the {@link Sentence} that the word belongs to
+        :return: true if the word was split, false otherwise
+        """
         cdef str forced_replacement
         forced_replacement = self.getCorrectForm(word.getName(), self.__split_words)
         if forced_replacement != "":
@@ -268,6 +304,13 @@ cdef class SimpleSpellChecker(SpellChecker):
     cpdef bint forcedShortcutCheck(self,
                                    Word word,
                                    Sentence result):
+        """
+        Checks if the given word is a shortcut form, such as "5kg" or "2.5km". If it is, it splits the word into its
+        number and unit form and adds them to the given sentence.
+        :param word: the {@link Word} to check for shortcut split
+        :param result: the {@link Sentence} that the word belongs to
+        :return: true if the word was split, false otherwise
+        """
         cdef str shortcut_regex, conditional_shortcut_regex, forced_replacement
         cdef int i
         cdef tuple pair
@@ -291,6 +334,13 @@ cdef class SimpleSpellChecker(SpellChecker):
     cpdef bint forcedDeDaSplitCheck(self,
                              Word word,
                              Sentence result):
+        """
+        Checks if the given word has a "da" or "de" suffix that needs to be split according to a predefined set of
+        rules. If the split is needed, the word is replaced with its bare form and "da" or "de" in the given sentence.
+        :param word: the {@link Word} to check for "da" or "de" split
+        :param result: the {@link Sentence} that the word belongs to
+        :return: true if the word was split, false otherwise
+        """
         cdef str word_name, capitalized_word_name, new_word_name
         cdef TxtWord txt_word, txt_new_word
         cdef FsmParseList fsm_parse_list
@@ -304,10 +354,11 @@ cdef class SimpleSpellChecker(SpellChecker):
                 fsm_parse_list = self.fsm.morphologicalAnalysis(new_word_name)
                 txt_new_word = self.fsm.getDictionary().getWord(Word.toLower(new_word_name))
                 if txt_new_word is not None and isinstance(txt_new_word, TxtWord) and txt_new_word.isProperNoun():
-                    if self.fsm.morphologicalAnalysis(new_word_name + "'" + "da").size() > 0:
-                        result.addWord(Word(new_word_name + "'" + "da"))
+                    new_word_name_capitalized = Word.toCapital(new_word_name)
+                    if self.fsm.morphologicalAnalysis(new_word_name_capitalized + "'" + "da").size() > 0:
+                        result.addWord(Word(new_word_name_capitalized + "'" + "da"))
                     else:
-                        result.addWord(Word(new_word_name + "'" + "de"))
+                        result.addWord(Word(new_word_name_capitalized + "'" + "de"))
                     return True
                 if fsm_parse_list.size() > 0:
                     txt_word = self.fsm.getDictionary().getWord(
@@ -331,6 +382,15 @@ cdef class SimpleSpellChecker(SpellChecker):
                                Word word,
                                Sentence result,
                                Word previousWord):
+        """
+        Checks if the given word is a suffix like 'li' or 'lik' that needs to be merged with its preceding word which
+        is a number. If the merge is needed, the word and its preceding word are replaced with their merged form in
+        the given sentence.
+        :param word: the {@link Word} to check for merge
+        :param result: the {@link Sentence} that the word belongs to
+        :param previousWord: the preceding {@link Word} of the given {@link Word}
+        :return: true if the word was merged, false otherwise
+        """
         cdef list li_list, lik_list
         cdef str suffix
         li_list = ["li", "lı", "lu", "lü"]
@@ -355,6 +415,17 @@ cdef class SimpleSpellChecker(SpellChecker):
                                Sentence result,
                                Word previousWord,
                                Word nextWord):
+        """
+        Checks whether the next word and the previous word can be merged if the current word is a hyphen, an en-dash
+        or an em-dash. If the previous word and the next word exist and they are valid words, it merges the previous
+        word and the next word into a single word and add the new word to the sentence If the merge is valid, it
+        returns true.
+        :param word: current {@link Word}
+        :param result: the {@link Sentence} that the word belongs to
+        :param previousWord: the {@link Word} before current word
+        :param nextWord: the {@link Word} after current word
+        :return: true if merge is valid, false otherwise
+        """
         cdef str new_word_name
         if word.getName() == "-" or word.getName() == "–" or word.getName() == "—":
             compiled_expression = re.compile("[a-zA-ZçöğüşıÇÖĞÜŞİ]+")
@@ -367,26 +438,65 @@ cdef class SimpleSpellChecker(SpellChecker):
                     return True
         return False
 
+    cpdef bint forcedSuffixSplitCheck(self,
+                               Word word,
+                               Sentence result):
+        """
+        Checks whether the given {@link Word} can be split into a proper noun and a suffix, with an apostrophe in
+        between and adds the split result to the {@link Sentence} if it's valid.
+        :param word: the {@link Word} to check for forced suffix split.
+        :param result: the {@link Sentence} that the word belongs to
+        :return: true if the split is successful, false otherwise.
+        """
+        cdef str word_name, probable_proper_noun, probable_suffix, apostrophe_word
+        cdef TxtWord txt_word
+        cdef int i
+        word_name = word.getName()
+        if self.fsm.morphologicalAnalysis(word_name).size() > 0:
+            return False
+        for i in range(1, len(word_name)):
+            probable_proper_noun = Word.toCapital(word_name)[:i]
+            probable_suffix = word_name[i:]
+            apostrophe_word = probable_proper_noun + "'" + probable_suffix
+            txt_word = self.fsm.getDictionary().getWord(Word.toLower(probable_proper_noun))
+            if txt_word is not None and isinstance(txt_word, TxtWord) and txt_word.isProperNoun() \
+                and self.fsm.morphologicalAnalysis(apostrophe_word).size() > 0:
+                result.addWord(Word(apostrophe_word))
+                return True
+        return False
+
     cpdef bint forcedQuestionSuffixSplitCheck(self,
                                        Word word,
                                        Sentence result):
-        cdef str word_name, new_word_name
-        cdef TxtWord txt_word
+        """
+        Checks whether the current word ends with a valid question suffix and split it if it does. It splits the word
+        with the question suffix and adds the two new words to the sentence. If the split is valid, it returns true.
+        :param word: current {@link Word}
+        :param result: the {@link Sentence} that the word belongs to
+        :return: true if split is valid, false otherwise
+        """
+        cdef str word_name, split_word_name, question_suffix
+        cdef TxtWord split_word_root
         word_name = word.getName()
         if self.fsm.morphologicalAnalysis(word_name).size() > 0:
             return False
         for question_suffix in self.__questionSuffixList:
             if word_name.endswith(question_suffix):
-                new_word_name = word_name[0:word_name.rindex(question_suffix)]
-                txt_word = self.fsm.getDictionary().getWord(new_word_name)
-                if self.fsm.morphologicalAnalysis(new_word_name).size() > 0 and txt_word is not None \
-                        and isinstance(txt_word, TxtWord) and not txt_word.isCode():
-                    result.addWord(Word(new_word_name))
+                split_word_name = word_name[0:word_name.rindex(question_suffix)]
+                if self.fsm.morphologicalAnalysis(split_word_name).size() < 1:
+                    return False
+                split_word_root = self.fsm.getDictionary().getWord(self.fsm.morphologicalAnalysis(split_word_name).getParseWithLongestRootWord().getWord().getName())
+                if self.fsm.morphologicalAnalysis(split_word_name).size() > 0 and split_word_root is not None \
+                        and isinstance(split_word_root, TxtWord) and not split_word_root.isCode():
+                    result.addWord(Word(split_word_name))
                     result.addWord(Word(question_suffix))
                     return True
         return False
 
     cpdef loadDictionaries(self):
+        """
+        Loads the merged and split lists from the specified files.
+        """
         cdef str line, word, split_word
         cdef list items, lines
         cdef int index
@@ -411,6 +521,13 @@ cdef class SimpleSpellChecker(SpellChecker):
         return ""
 
     cpdef list mergedCandidatesList(self, Word previousWord, Word word, Word nextWord):
+        """
+        Generates a list of merged candidates for the word and previous and next words.
+        :param previousWord: The previous {@link Word} in the sentence.
+        :param word: The {@link Word} currently being checked.
+        :param nextWord: The next {@link Word} in the sentence.
+        :return: A list of merged candidates.
+        """
         cdef list merged_candidates
         cdef Candidate backward_merge_candidate, forward_merge_candidate
         cdef FsmParseList fsm_parse_list
@@ -430,6 +547,11 @@ cdef class SimpleSpellChecker(SpellChecker):
         return merged_candidates
 
     cpdef list splitCandidatesList(self, Word word):
+        """
+        Generates a list of split candidates for the given word.
+        :param word: The {@link Word} currently being checked.
+        :return: A list of split candidates.
+        """
         cdef list split_candidates
         cdef int i
         cdef str first_part, second_part
@@ -445,12 +567,18 @@ cdef class SimpleSpellChecker(SpellChecker):
         return split_candidates
 
     cpdef tuple getSplitPair(self, Word word):
+        """
+        Splits a word into two parts, a key and a value, based on the first non-numeric/non-punctuation character.
+        :param word: the {@link Word} object to split
+        :return: an {@link AbstractMap.SimpleEntry} object containing the key (numeric/punctuation characters) and the
+        value (remaining characters)
+        """
         cdef str key, value
         cdef int j
         key = ""
         j = 0
         while j < len(word.getName()):
-            if "0" <= word.getName()[j] <= "9":
+            if "0" <= word.getName()[j] <= "9" or word.getName()[j] == '.' or word.getName()[j] == ',':
                 key = key + word.getName()[j]
             else:
                 break

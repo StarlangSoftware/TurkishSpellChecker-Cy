@@ -7,7 +7,7 @@ cdef class SpellCheckerParameter:
         the minimum word length is 4.
         """
         self.__threshold = 0.0
-        self.__deMiCheck = True
+        self.__suffixCheck = True
         self.__rootNGram = True
         self.__minWordLength = 4
         self.__domain = ""
@@ -19,12 +19,12 @@ cdef class SpellCheckerParameter:
         """
         self.__threshold = threshold
 
-    cpdef setDeMiCheck(self, bint deMiCheck):
+    cpdef setSuffixCheck(self, bint suffixCheck):
         """
         Enables or disables De-Mi check for the spell checker.
-        :param deMiCheck: a boolean indicating whether the De-Mi check should be enabled (true) or disabled (false)
+        :param suffixCheck: a boolean indicating whether the De-Mi check should be enabled (true) or disabled (false)
         """
-        self.__deMiCheck = deMiCheck
+        self.__suffixCheck = suffixCheck
 
     cpdef setRootNGram(self, bint rootNGram):
         """
@@ -54,12 +54,12 @@ cdef class SpellCheckerParameter:
         """
         return self.__threshold
 
-    cpdef bint isDeMiCheck(self):
+    cpdef bint isSuffixCheck(self):
         """
         Returns whether De-Mi check is enabled for the spell checker.
         :return: a boolean indicating whether De-Mi check is enabled for the spell checker
         """
-        return self.__deMiCheck
+        return self.__suffixCheck
 
     cpdef bint isRootNGram(self):
         """

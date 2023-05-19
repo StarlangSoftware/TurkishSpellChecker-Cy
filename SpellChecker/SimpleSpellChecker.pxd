@@ -23,6 +23,7 @@ cdef class SimpleSpellChecker(SpellChecker):
     cpdef bint forcedDeDaSplitCheck(self, Word word, Sentence result)
     cpdef bint forcedSuffixMergeCheck(self, Word word, Sentence result, Word previousWord)
     cpdef bint forcedHyphenMergeCheck(self, Word word, Sentence result, Word previousWord, Word nextWord)
+    cpdef bint forcedSuffixSplitCheck(self, Word word, Sentence result)
     cpdef bint forcedQuestionSuffixSplitCheck(self, Word word, Sentence result)
     cpdef loadDictionaries(self)
     cpdef str getCorrectForm(self, str wordName, dict dictionary)
