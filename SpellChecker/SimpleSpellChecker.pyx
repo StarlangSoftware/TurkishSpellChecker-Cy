@@ -49,6 +49,11 @@ cdef class SimpleSpellChecker(SpellChecker):
         self.loadDictionaries()
 
     cpdef object getFile(self, str file_name):
+        """
+        Opens and returns a file reader of a given file name.
+        :param file_name: File to read
+        :return: File reader of the given file.
+        """
         if len(self.parameter.getDomain()) == 0:
             return open(pkg_resources.resource_filename(__name__, 'data/' + file_name), "r", encoding="utf8")
         else:
@@ -516,6 +521,12 @@ cdef class SimpleSpellChecker(SpellChecker):
         input_file.close()
 
     cpdef str getCorrectForm(self, str wordName, dict dictionary):
+        """
+        Returns the correct form of a given word by looking it up in the provided dictionary.
+        :param wordName: the name of the word to look up in the dictionary
+        :param dictionary: the dictionary to use for looking up the word
+        :return: the correct form of the word, as stored in the dictionary, or null if the word is not found
+        """
         if wordName in dictionary:
             return dictionary[wordName]
         return ""

@@ -100,6 +100,12 @@ cdef class TrieBasedSpellChecker(NGramSpellChecker):
         return results
 
     cpdef int searchCandidates(self, list result, TrieCandidate candidate):
+        """
+        Searches the intermediate results array for the given candidate. The search is done based on name of the candidate.
+        :param result: Array to search for candidate
+        :param candidate: Candidate to be searched.
+        :return: Index of the candidate in the results array. If it does not exist, returns -1.
+        """
         cdef int i
         for i in range(len(result)):
             if result[i].getName() == candidate.getName():

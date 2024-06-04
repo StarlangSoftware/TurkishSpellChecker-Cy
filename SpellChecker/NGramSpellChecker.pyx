@@ -90,11 +90,21 @@ cdef class NGramSpellChecker(SimpleSpellChecker):
         return None
 
     cpdef setThreshold(self, float threshold):
+        """
+        Sets the threshold value used in calculating the n-gram probabilities.
+        :param threshold: the threshold for the spell checker
+        """
         self.__threshold = threshold
 
     cpdef float getProbability(self,
                                str word1,
                                str word2):
+        """
+        Returns the bi-gram probability P(word2 | word1) for the given bigram consisting of two words.
+        :param word1: First word in bi-gram
+        :param word2: Second word in bi-gram
+        :return: Bi-gram probability P(word2 | word1)
+        """
         return self.__nGram.getProbability(word1, word2)
 
     cpdef Sentence spellCheck(self, Sentence sentence):
