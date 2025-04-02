@@ -8,8 +8,8 @@ from Cython.Build import cythonize
 setup(
     ext_modules=cythonize(["SpellChecker/*.pyx"],
                           compiler_directives={'language_level': "3"}),
-    name='NlpToolkit-SpellChecker-Cy',
-    version='1.0.13',
+    name='nlptoolkit-spellchecker-cy',
+    version='1.0.14',
     packages=['SpellChecker'],
     package_data={'SpellChecker': ['*.pxd', '*.pyx', '*.c'],
                   'SpellChecker.data': ['*.txt']},
